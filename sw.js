@@ -1,29 +1,34 @@
-const CACHE = 'mysad-v1';
-const FILES = ['/', '/index.html', '/manifest.json'];
+const CACHE = 'mysad-v2';
+const BASE = '/moy-sad/';
+const FILES = [BASE, BASE + 'index.html', BASE + 'manifest.json'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).catch(()=>{}));
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(FILES)).catch(() => {})
+  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))
-  ));
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    )
+  );
   self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
   e.respondWith(
     caches.match(e.request).then(cached => {
-      if(cached) return cached;
+      if (cached) return cached;
       return fetch(e.request).then(resp => {
-        if(resp && resp.status===200 && resp.type==='basic'){
+        if (resp && resp.status === 200 && resp.type === 'basic') {
           const clone = resp.clone();
-          caches.open(CACHE).then(c=>c.put(e.request,clone));
+          caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return resp;
-      }).catch(()=> cached || new Response('Нет соединения', {status:503}));
+      }).catch(() => cached || new Response('Нет соединения', {status: 503}));
     })
   );
 });
